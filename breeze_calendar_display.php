@@ -10,13 +10,18 @@ Author: David Servias
 // Set development mode to true to use test data instead of data from the Breeze API.
 $development_mode = false;
 
+// TODO: 
 // try to import a file that contains the api key
 // If the file doesn't exist, set development mode do true.
 // code:
 // Check if file exists:
 require_once("api_secrets.php");
 
+// include javascript
+wp_enqueue_script('breeze_calendar_display', plugin_dir_url(__FILE__) . 'javascript/breeze_calendar_display.js');
 
+// include css
+wp_enqueue_style('breeze_calendar_display', plugin_dir_url(__FILE__) . 'css/breeze_calendar_display.css');
 
 
 function construct_data_array($api_key) {
@@ -37,15 +42,16 @@ function construct_data_array($api_key) {
 
   // Get event data from Breeze 
   $events = $breeze->url($request_url);
+  
   $events_data = json_decode($events, true);
 
   // get locations from breeze
   $locations = $breeze->url('https://uufc.breezechms.com/api/events/locations');
   $available_locations_array = json_decode($locations, true);
 
-  
-
+  // add data to data array
   $data["events"] = $events_data;
+  
   $data["locations"] = $available_locations_array;
   
   // build array of calendar ids
@@ -61,108 +67,17 @@ function construct_data_array($api_key) {
   return $data;
 };
 
-
-
-
-
-
-// // import breeze class
-// // (might not need the query string)
-// // $query_string = 'https://uufc.breezechms.com/api/events?';
-
-// require_once('breeze.php');
-
-// // Get start and end dates for events
-// $today = date("Y-m-d");
-// $start_date_obj = date_create($today);
-// $start_date_string = date_format($start_date_obj, "Y-m-d");
-// $end_date_obj = date_add($start_date_obj, date_interval_create_from_date_string("2 Months"));
-// $end_date_string = date_format($end_date_obj, "Y-m-d");
-
-// // construct request url from start and end dates
-// $request_url = "https://uufc.breezechms.com/api/events?start=" . $start_date_string . "&end=" . $end_date_string . "&details=1"; 
-// //. "&calendar_id=" . $upcoming_events_calendar_id;
-
-// // Get event data from Breeze 
-// $breeze = new Breeze($api_key);
-// $events = $breeze->url($request_url);
-// $events_data = json_decode($events, true);
-
-// // get locations from breeze
-// $locations = $breeze->url('https://uufc.breezechms.com/api/events/locations');
-// $available_locations_array = json_decode($locations, true);
-
-
-// // build array of calendar ids
-// $calendar_ids = array();
-// $calendar_ids["upcoming_events"] = "86556";
-// $calendar_ids["main"] = "0";
-// $calendar_ids["re_sundays"] = "81098";
-// $calendar_ids["rentals"] = "86204";
-// $calendar_ids["inquirers_series"] = "89238";
-
-
-// // construct request url from start and end dates
-// $request_url = "https://uufc.breezechms.com/api/events?start=" . $start_date_string . "&end=" . $end_date_string . "&details=1"; 
-// //. "&calendar_id=" . $upcoming_events_calendar_id;
-
-
+// TODO: Set up procedures for development mode.
 if ($development_mode == true) {
-  require_once("event_list_test_data.php");
-  $available_locations_array = json_decode($available_locations_json, true);
-  $events_data = json_decode($events, true);
+  echo "development mode is true";
+  // require_once("event_list_test_data.php");
+  // $available_locations_array = json_decode($available_locations_json, true);
+  // $events_data = json_decode($events, true);
 } 
-else
+else 
 {
-    
-  
-  // $query_string = 'https://uufc.breezechms.com/api/events?';
-    // require_once('breeze.php');
-
-
-    // create an stub class called Breeze
-    // Comment this out for production. It's just here to make the errors go away in development mode.
-    // Class Breeze {
-    //   private $api_key;
-    //   public function url($url) {
-    //     return "This is a stub function. It's just here to make the errors go away.";
-    //   }
-    //   public function __construct($api_key) {
-    //     $this->api_key = $api_key;
-    //   }
-    // };
-
-    // // Get start and end dates for events
-    // $today = date("Y-m-d");
-    // $start_date_obj = date_create($today);
-    // $start_date_string = date_format($start_date_obj, "Y-m-d");
-    // $end_date_obj = date_add($start_date_obj, date_interval_create_from_date_string("2 Months"));
-    // $end_date_string = date_format($end_date_obj, "Y-m-d");
-    
-    // set calendar ids
-    // build array of calendar ids
-
-    // $calendar_ids = array();
-    // $calendar_ids["upcoming_events"] = "86556";
-    // $calendar_ids["main"] = "0";
-    // $calendar_ids["re_sundays"] = "81098";
-    // $calendar_ids["rentals"] = "86204";
-    // $calendar_ids["inquirers_series"] = "89238";
-
-
-    // construct request url from start and end dates
-    // $request_url = "https://uufc.breezechms.com/api/events?start=" . $start_date_string . "&end=" . $end_date_string . "&details=1"; 
-    // //. "&calendar_id=" . $upcoming_events_calendar_id;
-  
-
-    // to get calendar ids in order to list only events from a specific calendar, set $print_calendar_ids to true.
-    // Calendar info will be printed above the breeze calendar.
-    // $print_calendar_ids = false;
-    // if ($print_calendar_ids === true) {
-    //   $calendars = $breeze->url('https://uufc.breezechms.com/api/events/calendars/list');
-    //   echo $calendars;
-    // };
-    
+  // do something
+        
 };
 
 // Function to display heading
@@ -174,10 +89,13 @@ function display_heading() {
 
 function list_events($api_key) {
   $data = construct_data_array($api_key);
-  $output = "";
+  $output = '<div id="app-container" class=" custom-sidebar-group breeze-template-part" >
+  <div class="event-list-container calendar-page">
+  <h1 style="font-weight:bold;">Events Calendar</h1>
+  <div id="event-list">';
   // loop through events
   foreach ( $data['events'] as $event)  {
-    
+       
     // the request to the api gets all the events in all calendars.
     // Here we exclude the events on calendars we don't want to display.
     // If an event has a calendar_id that matches on of the calendars
@@ -237,15 +155,17 @@ function list_events($api_key) {
     // $index will be the index of the element in $available_locations_array that matches $event_location_id.
     $index = array_search($event_location_id, array_column($data['locations'], 'id'));
     $location_name = $data['locations'][$index]["name"];
-    
+   
+
+
     $output .= '<div class="event-container" onclick="toggleEventSummary(this)">'
       . '<div class="event-summary">' 
       . '<div class="date-container">'
-      . '<h1 class="day">' . $day . '</h1/>'
+      . '<h1 class="day">' . $day . '</h1>'
       . '<p class="month">' . $month . '</p>'
       . '</div>'
       . '<div class="event-info-container">
-          <h2 class="event-name"><' . $event_name . '</h2>
+          <h2 class="event-name">' . $event_name . '</h2>
           <p class="event_time"><i class="fa-regular fa-clock"></i>
           * ' . $time_string . '</p>
           <p class="event_location"><i class="fa-solid fa-location-dot"></i>*' . $location_name . '</p>    
@@ -264,36 +184,30 @@ function list_events($api_key) {
         <p><strong>location: </strong>' . $location_name . '</p>
         <p><strong>description: </strong>' . $event["details"]["event_description"] . '</p>
         <p class="back-to-list">(click to go back to list)</p>
-      </div>
-    </div>';
+      </div></div>';
 
     // End of event container -->  
   }; // end foreach loop 
+  $output .= '</div></div>';
+
+  // Test: write $output to a text file.
+  $file = fopen("output.txt", "w");
+  fwrite($file, $output);
+  fclose($file);
+
+
 
   return $output;
 };
 
-// function get_available_locations_array($api_key) {
-//   $breeze = new Breeze($api_key);
-//   $locations = $breeze->url('https://uufc.breezechms.com/api/events/locations');
-//   $available_locations_array = json_decode($locations, true);
-//   return $available_locations_array;
-// };
 
+
+  
 
 // main function
 function build_interface($api_key, $events_data) {
-  // $available_locations_array = get_available_locations_array($api_key);
+  
 
-  // build array of calendar ids
-  // $calendar_ids = array();
-  // $calendar_ids["upcoming_events"] = "86556";
-  // $calendar_ids["main"] = "0";
-  // $calendar_ids["re_sundays"] = "81098";
-  // $calendar_ids["rentals"] = "86204";
-  // $calendar_ids["inquirers_series"] = "89238";
-
- 
   $output = display_heading();
   $output .= list_events($api_key);
 
