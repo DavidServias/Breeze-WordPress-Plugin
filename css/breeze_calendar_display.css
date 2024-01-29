@@ -1,0 +1,265 @@
+@import url('https://fonts.googleapis.com/css?family=Inter&display=swap');
+
+:root {
+    --main-text-color:#212330;
+    --app-container-width: 100%; 
+    --event-list-container-width: 100%;
+    --app-container-height: 500px;
+    --event-summary-min-height: 100px;
+    --event-summary-max-height: 200px;
+    --event-summary-max-width: 100%;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+#app-container {
+    font-family: 'Inter';
+    position:relative;
+    width: 100%;
+    margin: auto;
+}
+
+
+#app-container.custom-sidebar-group {
+    display: flex;
+    flex-direction: column;
+}
+
+#app-container p {
+    font-size:12px;
+}
+
+#app-container h1 {
+    font-size: 24px;
+}
+
+#app-container h2 {
+    font-size: 18px;
+    letter-spacing: 0px;
+}
+
+#app-container p,
+#app-container span,
+#app-container h1 {
+    margin: 0px 15px 0px 0px;
+    padding: 0;
+    text-shadow: 2px 2px 2px #00000025 !important;
+}
+
+#app-container h2 {
+    margin: 0;
+    padding: 0;
+    text-shadow: 4px 4px 4px #00000025 !important;
+}
+
+#app-container {
+/*     height: var(--app-container-height); */
+    display: flex;
+    flex-direction: row;
+    align-items: start;
+}
+
+.back-to-list {
+    width: 100%;
+    text-align: center;
+    font-size: 1.2em !important;
+    margin: 10px auto 50px auto !important;
+    font-weight: bold;
+
+}
+
+#breeze-calendar-heading {
+    position: sticky;
+    top: 0px;
+    z-index: 999;
+    background-color: #c0aa96;
+    width: 100%;
+    padding: 3px;
+    margin-left: 0px;
+    padding-left: 16px;
+}
+
+.event-list-container, .event-details-container {
+    width: var(--event-list-container-width);
+    height: 100%;
+    overflow:scroll;
+    color: var(--main-text-color);
+    background-color: #C0AA96;
+    position:relative;
+}
+
+.event-list-container.sidebar {
+     background-color: #C0AA96;
+}
+
+.event-list-container.calendar-page {
+	 background-color: var(--global-color-35);
+}
+
+ #app-container.breeze-template-part {
+     background-color: var(--global-color-35);
+	  padding: 10px;
+      position: relative;
+/*       left: -10px; */
+} 
+
+#calendar #app-container.breeze-template-part, #calendar .event-list-container.calendar-page {
+	background-color: #96B9C0;
+}
+
+
+
+
+#event-list {
+    list-style-type: none;
+}
+
+#event-list-heading {
+    text-align: center;
+    font-style: italic;
+}
+
+.event-container {
+    width: 95%;
+    font-size: 1em;
+    transition: transform 0.3s, height 1s, max-height 1szZZ;
+    margin:10px auto;
+	background-color: #D9D9D9; 
+    box-shadow: 10px 10px 10px #00000025;
+    position: relative;
+}
+
+.event-summary {
+    min-height: var(--event-summary-min-height);
+    max-height: var(--event-summary-max-height);
+    display: flex;
+    position:relative;
+    flex-direction: row;
+    align-items: center;
+    overflow: hidden;
+}
+
+.event-container:hover {
+    transform:scale(1.05);
+    cursor: pointer;
+    border: solid 2px #5F92A1;
+}
+
+
+.date-container {
+    width: 15%;
+    height: 100%;
+    display: inherit;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+p.month, h1.day {
+    margin-left:5px !important;
+    color: #705E66 !important;
+    font-weight: bold !important;
+}
+
+.link-to-info-container {
+    height: 15px;
+    width: 100%;
+    position: absolute;
+    display: inherit;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+#link-to-info  {
+    color: #5F92A1;
+    font-size:12px;
+    text-decoration: underline;
+    margin-right:5px !important;
+    margin-top:2px !important;
+}
+
+#link-to-info:hover {
+    font-weight:900;
+}
+
+.event-info-container {
+    width: 100%;
+    height:100%;
+    color: var(--main-text-color);
+    display: inherit;
+    flex-direction: column;
+    justify-content: center;
+    align-items: start;
+    padding-left: 10px;
+    position:relative;
+}
+
+p.event_time, p.event_location {
+    margin-left: 5px !important;
+    color: #21233085;
+}
+
+p.event_time:hover, p.event_location:hover, h2.event_name:hover {
+    margin-left: 5px !important;
+    color: #212330;
+}
+
+.event-name {
+   max-width: 90%;
+   color: var(--main-text-color) !important;  
+}
+
+.event-details {
+    width: 100%;
+    color: var(--main-text-color);
+    background-color: #D9D9D9;
+    display:flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: left;
+    height: 0px;
+    overflow:scroll;
+    padding: 0px 20px;
+}
+
+.details-date {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.details-name {
+    text-align: left;
+    font-weight: bold;
+    margin-bottom: 10px !important;
+
+}   
+
+p.details-location, p.details-time, p.details-description, p.details-location {
+    transform: scale(1.5);
+}
+
+#end {
+    font-weight: italic;
+    text-align: right;
+    margin-right: 5px;
+}
+
+#scroll-down {
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+    top: 5px;
+    position: relative;
+    
+}
+
+
+/* @media screen and (max-width: 782px) {
+  #app-container {
+    width: 100%; 
+  }
+  
+} */
