@@ -88,8 +88,10 @@ function display_heading() {
 };
 
 function list_events($api_key) {
+
   $data = construct_data_array($api_key);
-  $output = '<div id="app-container" class=" custom-sidebar-group breeze-template-part" >
+  $breeze_output = "";
+  $breeze_output .= '<div id="app-container" class=" custom-sidebar-group breeze-template-part" >
   <div class="event-list-container calendar-page">
   <h1 style="font-weight:bold;">Events Calendar</h1>
   <div id="event-list">';
@@ -158,7 +160,7 @@ function list_events($api_key) {
    
 
 
-    $output .= '<div class="event-container" onclick="toggleEventSummary(this)">'
+    $breeze_output .= '<div class="event-container" onclick="toggleEventSummary(this)">'
       . '<div class="event-summary">' 
       . '<div class="date-container">'
       . '<h1 class="day">' . $day . '</h1>'
@@ -176,7 +178,7 @@ function list_events($api_key) {
       </div>';
       // Event Details: 
       // Expands when event summary is clicked upon -->
-      $output .= '<div class="event-details">
+      $breeze_output .= '<div class="event-details">
         <h1 class="details-date"> ' . $month . $day . $year . '</h1>
         <h2 class="details-name">' . $event["name"] . '</h2> 
         <p><strong>start time: </strong>' . date("g:i A", strtotime($start_datetime) ) . '</p>
@@ -187,39 +189,30 @@ function list_events($api_key) {
       </div></div>';
 
     // End of event container -->  
+
+    // TEST: Remove and uncomment previous code when done testing.
+      // $breeze_output .= '<p class="event-name">' . $event[
+      //   "name"] . '</p>';
+
   }; // end foreach loop 
-  $output .= '</div></div>';
+  $breeze_output .= '</div></div></div>';
 
-  // Test: write $output to a text file.
-  $file = fopen("output.txt", "w");
-  fwrite($file, $output);
-  fclose($file);
+  // Test: write $breeze_output to a text file.
+  // $file = fopen("output.txt", "w");
+  // fwrite($file, $breeze_output);
+  // fclose($file);
 
-
-
-  return $output;
+  return $breeze_output;
 };
 
-
-
-  
-
 // main function
-function build_interface($api_key, $events_data) {
+function generate_breeze_html($api_key) {
   
+  $breeze_output = display_heading();
+  $breeze_output .= list_events($api_key);
 
-  $output = display_heading();
-  $output .= list_events($api_key);
-
-  return $output;
+  return $breeze_output;
 };
 
 // register the shortcode
-add_shortcode('breeze_calendar_display', 'build_interface');
-
-
-
-
-
-
-
+add_shortcode('breeze_calendar_display', 'generate_breeze_html');
