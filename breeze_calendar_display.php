@@ -15,7 +15,7 @@ $development_mode = false;
 // If the file doesn't exist, set development mode do true.
 // code:
 // Check if file exists:
-require_once("api_secrets.php");
+// require_once("api_secrets.php");
 
 // include javascript
 wp_enqueue_script('breeze_calendar_display', plugin_dir_url(__FILE__) . 'javascript/breeze_calendar_display.js');
@@ -24,7 +24,9 @@ wp_enqueue_script('breeze_calendar_display', plugin_dir_url(__FILE__) . 'javascr
 wp_enqueue_style('breeze_calendar_display', plugin_dir_url(__FILE__) . 'css/breeze_calendar_display.css');
 
 
-function construct_data_array($api_key) {
+function construct_data_array($atts) {
+  require_once("api_secrets.php");
+  $num_days = $atts['days'];
   $data = array();
   require_once('breeze.php');
   $breeze = new Breeze($api_key);
@@ -33,7 +35,7 @@ function construct_data_array($api_key) {
   $today = date("Y-m-d");
   $start_date_obj = date_create($today);
   $start_date_string = date_format($start_date_obj, "Y-m-d");
-  $end_date_obj = date_add($start_date_obj, date_interval_create_from_date_string("2 Months"));
+  $end_date_obj = date_add($start_date_obj, date_interval_create_from_date_string($num_days . " days"));
   $end_date_string = date_format($end_date_obj, "Y-m-d");
 
   // construct request url from start and end dates
@@ -54,13 +56,25 @@ function construct_data_array($api_key) {
   
   $data["locations"] = $available_locations_array;
   
+  // to get calendar ids in order to list only events from  
+  //specific calendar, set $print_calendar_ids to true.
+  // Calendar info will be printed above the breeze calendar.
+  $print_calendar_ids = false;
+  if ($print_calendar_ids === true) {
+    $calendars = $breeze->url('https://uufc.breezechms.com/api/events/calendars/list');
+    echo $calendars;
+  };
+  
+  
   // build array of calendar ids
   $data["calendar_ids"] = array(
     "upcoming_events" => "86556",
     "main" => "0",
     "re_sundays" => "81098",
     "rentals" => "86204",
-    "inquirers_series" => "89238"
+    "inquirers_series" => "89238",
+    "setup/teardown" => "91087",
+    "closed/internal meetings" => "91073"
   );
 
   
@@ -80,21 +94,75 @@ else
         
 };
 
-// Function to display heading
-function display_heading() {
-  $html = "<h1>Events Calendar</h1>";
-  return $html;
 
+function opening_tags() {
+  $html = '<div id="app-container" class=" custom-sidebar-group breeze-template-part" >
+  <div class="event-list-container calendar-page">
+  <div id="event-list">';
+  return $html;
 };
 
-function list_events($api_key) {
+function event_container_opening_tags() {
+  $html = '<div class="event-container" onclick="toggleEventSummary(this)">'
+  . '<div class="event-summary">';
+  return $html;
+}
 
-  $data = construct_data_array($api_key);
+
+function date_container ($month, $day) {
+  $html = '<div class="date-container">'
+  . '<h1 class="day">' . $day . '</h1>'
+  . '<p class="month">' . $month . '</p>'
+  . '</div>';
+  return $html;
+};
+
+function event_info_container($event_name, $time_string, $location_names) {
+  $html = 
+  '<div class="event-info-container">
+          <h2 class="event-name">' . $event_name . '</h2>
+          <p class="event_time"><i class="fa-regular fa-clock"></i>
+          * ' . $time_string . '</p>
+          <p class="event_location"><i class="fa-solid fa-location-dot"></i>*' . $location_names . '</p>    
+        </div>  
+        <div class="link-to-info-container">
+          <span id="link-to-info">info</span>
+        </div>';
+
+  return $html;
+};
+
+
+function list_event_location($event_name, $location_ids_array, $all_locations) {
+    $location_names = array();
+    foreach ($location_ids_array as $location_id) {
+      // use id as key to get location name from locations array
+      $index = array_search($location_id->id, array_column($all_locations, 'id'));
+      $location_name = $all_locations[$index]["name"];
+      // add location name to location names array
+      array_push($location_names, $location_name);
+      
+    };
+    $output = "<span>";
+
+    foreach ($location_names as $location_name) {
+      // if location is one of these, skip it
+      if($location_name === "Smart TV" || $location_name == "Projector Screen") {
+        continue;
+      }
+      $output .= $location_name . ', ';
+    };
+    // remove final comma and space
+    $output = substr($output, 0, -2);
+    $output .= "</span>";
+    return $output;
+};
+
+function list_events($atts) {
+  // get data from Breeze
+  $data = construct_data_array($atts);
   $breeze_output = "";
-  $breeze_output .= '<div id="app-container" class=" custom-sidebar-group breeze-template-part" >
-  <div class="event-list-container calendar-page">
-  <h1 style="font-weight:bold;">Events Calendar</h1>
-  <div id="event-list">';
+  $breeze_output .= opening_tags();
   // loop through events
   foreach ( $data['events'] as $event)  {
        
@@ -107,7 +175,8 @@ function list_events($api_key) {
             $data['calendar_ids']["main"],
             $data['calendar_ids']["re_sundays"],
             $data['calendar_ids']["rentals"],
-            $data['calendar_ids']["inquirers_series"]
+            $data['calendar_ids']["setup/teardown"],
+            $data['calendar_ids']["closed/internal meetings"]
           ])
         )
     {             
@@ -119,22 +188,28 @@ function list_events($api_key) {
     $month = date("M", strtotime($start_datetime));
     $day = date("d", strtotime($start_datetime));
     $year = date("Y", strtotime($start_datetime));
+    
     // strip of the leading zero
     if ($day[0] == "0") {
       $day = $day[1];
     };
+    
     // parse start time string
     $start_time = date("g:i A", strtotime($start_datetime));
+    
     // if the start time is on the hour, remove the minutes
     if (substr($start_time, -2) == "00") {
       $start_time = substr($start_time, 0, -6);
     }; 
+    
     // remove leading zero from start time.
     if ($start_time[0] == "0") {
       $start_time = substr($start_time, 1);
     };
+    
     // parse end time string
     $end_datetime = $event["end_datetime"];
+    
     // if end time is not set, don't display it
     if ($end_datetime == "0000-00-00 00:00:00") {
       $end_time = "";
@@ -143,76 +218,90 @@ function list_events($api_key) {
       $end_time = date("g:i A", strtotime($end_datetime));
       $time_string = $start_time . " - " . $end_time;
     };
-    //$event_description = $event["details"]["event_description"];
-    $category_id = $event["category_id"];
     
-    // get only the first location id listed 
     $location_ids_raw = $event["details"]["location_ids_json"];
     $location_ids_array = json_decode($location_ids_raw);
-    $event_location_id = $location_ids_array[0]->id;
+    // $event_location_id = $location_ids_array[0]->id;
 
-    // get the location name from the available locations array
-    // Find the element in  $available_locations_array with the value for "id" that matches $event_location_id.
-    // Then get the value for "name" from that element.
-    // $index will be the index of the element in $available_locations_array that matches $event_location_id.
-    $index = array_search($event_location_id, array_column($data['locations'], 'id'));
-    $location_name = $data['locations'][$index]["name"];
    
+    $locations_html = list_event_location($event_name, $location_ids_array, $data['locations']);
+   
+    // $index = array_search($event_location_id, array_column($data['locations'], 'id'));
+    // $location_name = $data['locations'][$index]["name"];
+   
+    $breeze_output .= event_container_opening_tags(); 
+    $breeze_output .= date_container($month, $day);
+    $breeze_output .= event_info_container($event_name, $time_string, $locations_html);
+
+    // Event Summary ending tag
+    $breeze_output .= '</div>';
+
+    // Event Details: 
+    // Expands when event summary is clicked upon -->
+    $breeze_output .= '<div class="event-details">
+      <h1 class="details-date"> ' . $month . $day . $year . '</h1>
+      <h2 class="details-name">' . $event["name"] . '</h2> 
+      <p><strong>start time: </strong>' . date("g:i A", strtotime($start_datetime) ) . '</p>
+      <p><strong>end time: </strong>' . date("g:i A", strtotime($end_datetime) ) . '</p>
+      <p><strong>location: </strong>' . $locations_html . '</p>';
+    
+    // if there is a description is set, display it.
 
 
-    $breeze_output .= '<div class="event-container" onclick="toggleEventSummary(this)">'
-      . '<div class="event-summary">' 
-      . '<div class="date-container">'
-      . '<h1 class="day">' . $day . '</h1>'
-      . '<p class="month">' . $month . '</p>'
-      . '</div>'
-      . '<div class="event-info-container">
-          <h2 class="event-name">' . $event_name . '</h2>
-          <p class="event_time"><i class="fa-regular fa-clock"></i>
-          * ' . $time_string . '</p>
-          <p class="event_location"><i class="fa-solid fa-location-dot"></i>*' . $location_name . '</p>    
-        </div>  
-        <div class="link-to-info-container">
-          <span id="link-to-info">info</span>
-        </div>
-      </div>';
-      // Event Details: 
-      // Expands when event summary is clicked upon -->
-      $breeze_output .= '<div class="event-details">
-        <h1 class="details-date"> ' . $month . $day . $year . '</h1>
-        <h2 class="details-name">' . $event["name"] . '</h2> 
-        <p><strong>start time: </strong>' . date("g:i A", strtotime($start_datetime) ) . '</p>
-        <p><strong>end time: </strong>' . date("g:i A", strtotime($end_datetime) ) . '</p>
-        <p><strong>location: </strong>' . $location_name . '</p>
-        <p><strong>description: </strong>' . $event["details"]["event_description"] . '</p>
-        <p class="back-to-list">(click to go back to list)</p>
-      </div></div>';
+    if (isset($event["details"]["event_description"])  ) {
+      $breeze_output .= '<p><strong>description: </strong>' . $event["details"]["event_description"] . '</p>';
+    } 
+    else {
+      $breeze_output .= '<p><strong>description: </strong>None</p>';
+    };
 
-    // End of event container -->  
+     $breeze_output .= '<p class="back-to-list">(close)</p>
+    </div></div>';
 
-    // TEST: Remove and uncomment previous code when done testing.
-      // $breeze_output .= '<p class="event-name">' . $event[
-      //   "name"] . '</p>';
+  // End of event container -->  
+
 
   }; // end foreach loop 
   $breeze_output .= '</div></div></div>';
 
   // Test: write $breeze_output to a text file.
-  // $file = fopen("output.txt", "w");
-  // fwrite($file, $breeze_output);
-  // fclose($file);
+  $file = fopen("output.txt", "w");
+  fwrite($file, $breeze_output);
+  fclose($file);
 
   return $breeze_output;
 };
 
-// main function
-function generate_breeze_html($api_key) {
+
+
+// generate html
+// function set default parameter for api_key
+
+
+function generate_breeze_html($atts) {
+  // access days attribute
   
-  $breeze_output = display_heading();
-  $breeze_output .= list_events($api_key);
+  
+  
+  $breeze_output = list_events($atts);
+
+  
 
   return $breeze_output;
 };
 
-// register the shortcode
-add_shortcode('breeze_calendar_display', 'generate_breeze_html');
+function breeze_calendar_display_shortcode($atts) {
+  $atts = shortcode_atts(
+    array(
+      'days' => '30'
+    ), $atts, 'breeze_calendar_display'
+  );
+  return generate_breeze_html($atts);
+
+
+}
+
+
+
+
+add_shortcode('breeze_calendar_display', 'breeze_calendar_display_shortcode');

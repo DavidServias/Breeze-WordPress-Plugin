@@ -141,10 +141,15 @@
     overflow: hidden;
 }
 
+
+
+
 .event-container:hover {
-    transform:scale(1.05);
+    /*transform:scale(1.05);*/
     cursor: pointer;
-    border: solid 2px #5F92A1;
+    border: solid 3px #5F92A1;
+    background-color: #f6f6f6
+
 }
 
 
