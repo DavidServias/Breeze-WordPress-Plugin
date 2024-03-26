@@ -1,7 +1,7 @@
 <?php 
 // Wordpress plugin header
 /*
-Plugin Name: Breeze Calendar
+Plugin Name: Breeze Calendar 2.1
 Description: A plugin to display data from the Breeze ChMS API. 
 Version: 1.0
 Author: David Servias
@@ -73,8 +73,8 @@ function construct_data_array($atts) {
     "re_sundays" => "81098",
     "rentals" => "86204",
     "inquirers_series" => "89238",
-    "setup/teardown" => "91087",
-    "closed/internal meetings" => "91073"
+    "setup_teardown" => "91087",
+    "closed_internal meetings" => "91073"
   );
 
   
@@ -96,14 +96,16 @@ else
 
 
 function opening_tags() {
-  $html = '<div id="app-container" class=" custom-sidebar-group breeze-template-part" >
-  <div class="event-list-container calendar-page">
+  //$html = '<div id="app-container" class=" custom-sidebar-group breeze-template-part" >
+
+  $html = '<div id="app-container" class="" >
+  <div class="event-list-container">
   <div id="event-list">';
   return $html;
 };
 
 function event_container_opening_tags() {
-  $html = '<div class="event-container" onclick="toggleEventSummary(this)">'
+  $html = '<div class="event-container" onclick="toggleEventDetails(this)">'
   . '<div class="event-summary">';
   return $html;
 }
@@ -121,10 +123,12 @@ function event_info_container($event_name, $time_string, $location_names) {
   $html = 
   '<div class="event-info-container">
           <h2 class="event-name">' . $event_name . '</h2>
+          <div class="inner-info">
           <p class="event_time"><i class="fa-regular fa-clock"></i>
           * ' . $time_string . '</p>
           <p class="event_location"><i class="fa-solid fa-location-dot"></i>*' . $location_names . '</p>    
-        </div>  
+          </div>
+          </div>  
         <div class="link-to-info-container">
           <span id="link-to-info">info</span>
         </div>';
@@ -170,19 +174,41 @@ function list_events($atts) {
     // Here we exclude the events on calendars we don't want to display.
     // If an event has a calendar_id that matches on of the calendars
     // that should not be displayed, it is skipped.
-    if (in_array($event['details']['category_id'], 
+    if (in_array($event['category_id'], 
           [
             $data['calendar_ids']["main"],
             $data['calendar_ids']["re_sundays"],
             $data['calendar_ids']["rentals"],
-            $data['calendar_ids']["setup/teardown"],
-            $data['calendar_ids']["closed/internal meetings"]
+            $data['calendar_ids']["setup_teardown"],
+            $data['calendar_ids']["closed_internal meetings"]
           ])
         )
     {             
       continue;
     };
-  
+
+
+
+    // Test to see if I can exclude calendars by name.
+    // if (in_array($event['details']['name'], 
+    //       [
+    //         "Setup\/Teardown",
+    //         'Setup/Teardown',
+    //         "Setup_Teardown"
+    //       ])
+    //     )
+    // {             
+    //   continue;
+    // };
+    
+    // Test to see if I can exclude calendars by calendar_id.
+    if ($event['category_id'] == "91087")
+    {             
+      continue;
+    };
+
+
+
     $event_name = $event["name"];
     $start_datetime = $event["start_datetime"];
     $month = date("M", strtotime($start_datetime));
@@ -239,8 +265,9 @@ function list_events($atts) {
     // Event Details: 
     // Expands when event summary is clicked upon -->
     $breeze_output .= '<div class="event-details">
-      <h1 class="details-date"> ' . $month . $day . $year . '</h1>
-      <h2 class="details-name">' . $event["name"] . '</h2> 
+      <h1 class="details-name">' . $event["name"] . '</h1>  
+      <h2 class="details-date"> ' . $month . ' ' . $day . ', ' .  $year . '</h2><br>
+     
       <p><strong>start time: </strong>' . date("g:i A", strtotime($start_datetime) ) . '</p>
       <p><strong>end time: </strong>' . date("g:i A", strtotime($end_datetime) ) . '</p>
       <p><strong>location: </strong>' . $locations_html . '</p>';
@@ -250,9 +277,12 @@ function list_events($atts) {
 
     if (isset($event["details"]["event_description"])  ) {
       $breeze_output .= '<p><strong>description: </strong>' . $event["details"]["event_description"] . '</p>';
+      
+      
     } 
     else {
       $breeze_output .= '<p><strong>description: </strong>None</p>';
+      
     };
 
      $breeze_output .= '<p class="back-to-list">(close)</p>
@@ -266,7 +296,9 @@ function list_events($atts) {
 
   // Test: write $breeze_output to a text file.
   $file = fopen("output.txt", "w");
-  fwrite($file, $breeze_output);
+  fwrite($file, $event["details"]["input_event_name"]);
+  //fwrite($file, $event["details"]["category_id"]);
+
   fclose($file);
 
   return $breeze_output;
@@ -279,8 +311,6 @@ function list_events($atts) {
 
 
 function generate_breeze_html($atts) {
-  // access days attribute
-  
   
   
   $breeze_output = list_events($atts);
@@ -291,11 +321,13 @@ function generate_breeze_html($atts) {
 };
 
 function breeze_calendar_display_shortcode($atts) {
+
   $atts = shortcode_atts(
     array(
       'days' => '30'
     ), $atts, 'breeze_calendar_display'
   );
+
   return generate_breeze_html($atts);
 
 
